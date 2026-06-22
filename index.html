@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faktura App</title>
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icon.png">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background-color: #f4f6f9; margin: 10px; padding-bottom: 40px; }
+        .container { max-width: 100%; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; }
+        h2 { color: #1B365D; border-bottom: 2px solid #1B365D; padding-bottom: 10px; margin-top: 0; font-size: 22px; text-align: center; }
+        h3 { color: #1B365D; font-size: 13px; text-transform: uppercase; margin-top: 25px; border-bottom: 1px solid #E5E7EB; padding-bottom: 5px; letter-spacing: 0.5px; }
+
+        /* Mobilvänlig layout: 1 kolumn på mobilen, 2 på datorskärmar */
+        .grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        @media (min-width: 600px) { .grid { grid-template-columns: 1fr 1fr; } .form-group.full-width { grid-column: span 2; } }
+
+        .form-group { margin-bottom: 5px; }
+        label { display: block; margin-bottom: 4px; font-weight: 600; color: #4B5563; font-size: 12px; }
+        input, textarea, select { width: 100%; padding: 12px; border: 1px solid #D1D5DB; border-radius: 6px; box-sizing: border-box; font-family: inherit; font-size: 15px; background-color: #FAFAFA; }
+        input:focus, textarea:focus, select:focus { border-color: #1B365D; outline: none; background-color: #FFF; }
+
+        button { background-color: #1B365D; color: white; padding: 16px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; margin-top: 30px; -webkit-appearance: none; }
+        button:hover { background-color: #11223A; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Faktura App</h2>
+
+    <h3>1. Faktura-info & Villkor</h3>
+    <div class="grid">
+        <div class="form-group">
+            <label for="invoiceNum">Fakturanummer</label>
+            <input type="text" id="invoiceNum" value="10001">
+        </div>
+        <div class="form-group">
+            <label for="invoiceDate">Fakturadatum</label>
+            <input type="date" id="invoiceDate">
+        </div>
+        <div class="form-group">
+            <label for="ourRef">Vår referens</label>
+            <input type="text" id="ourRef" value="Referensnamn">
+        </div>
+        <div class="form-group">
+            <label for="paymentTerms">Villkor</label>
+            <input type="text" id="paymentTerms" value="30 dagar netto">
+        </div>
+        <div class="form-group">
+            <label for="dueDate">Förfallodatum</label>
+            <input type="date" id="dueDate">
+        </div>
+        <div class="form-group">
+            <label for="interestRate">Dröjsmålsränta (%)</label>
+            <input type="text" id="interestRate" value="8%">
+        </div>
+    </div>
+
+    <h3>2. Mitt Företag (Avsändare)</h3>
+    <div class="grid">
+        <div class="form-group">
+            <label for="myCompany">Företagsnamn</label>
+            <input type="text" id="myCompany" value="Exempelföretaget AB">
+        </div>
+        <div class="form-group">
+            <label for="myOrgNum">Organisationsnummer</label>
+            <input type="text" id="myOrgNum" value="123456-7890">
+        </div>
+        <div class="form-group full-width">
+            <label for="myAddress">Adress & Ort</label>
+            <textarea id="myAddress" rows="2">Exempelgatan 12&#10;111 22 Stockholm</textarea>
+        </div>
+        <div class="form-group">
+            <label for="myVatNum">Momsreg.nr (VAT)</label>
+            <input type="text" id="myVatNum" value="SE123456789001">
+        </div>
+        <div class="form-group">
+            <label for="myPhone">Telefon (Kontakt)</label>
+            <input type="text" id="myPhone" value="070-000 00 00">
+        </div>
+        <div class="form-group full-width">
+            <label for="myEmail">E-post (Kontakt)</label>
+            <input type="email" id="myEmail" value="info@exempelforetand.se">
+        </div>
+    </div>
+
+    <h3>3. Kund (Mottagare)</h3>
+    <div class="grid">
+        <div class="form-group full-width">
+            <label for="clientName">Kundens namn / Företag</label>
+            <input type="text" id="clientName" value="Exempelkund AB">
+        </div>
+        <div class="form-group full-width">
+            <label for="clientAddress">Kundens Adress</label>
+            <textarea id="clientAddress" rows="2">Kundvägen 5&#10;123 45 Storstad</textarea>
+        </div>
+    </div>
+
+    <h3>4. Specifikation & Pris</h3>
+    <div class="grid">
+        <div class="form-group full-width">
+            <label for="itemDesc">Beskrivning av vara/tjänst</label>
+            <input type="text" id="itemDesc" value="Exempeltjänst / Konsultarbete">
+        </div>
+        <div class="form-group">
+            <label for="itemPrice">À-pris (Exkl. moms)</label>
+            <input type="number" id="itemPrice" value="5000.00" step="0.01">
+        </div>
+        <div class="form-group">
+            <label for="vatRate">Momssats</label>
+            <select id="vatRate">
+                <option value="0.25" selected>25%</option>
+                <option value="0.12">12%</option>
+                <option value="0.06">6%</option>
+            </select>
+        </div>
+    </div>
+
+    <button onclick="generatePDF()">Generera & Spara PDF</button>
+</div>
+
+<script>
+    // Sätt automatiskt dagens datum och förfallodatum (+30 dagar) på mobilen
+    window.onload = function() {
+        const today = new Date();
+        document.getElementById('invoiceDate').value = today.toISOString().substring(0, 10);
+
+        const future = new Date();
+        future.setDate(today.getDate() + 30);
+        document.getElementById('dueDate').value = future.toISOString().substring(0, 10);
+    };
+
+    async function generatePDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        const invoiceNum = document.getElementById('invoiceNum').value;
+        const invoiceDate = document.getElementById('invoiceDate').value;
+        const ourRef = document.getElementById('ourRef').value;
+        const paymentTerms = document.getElementById('paymentTerms').value;
+        const dueDate = document.getElementById('dueDate').value;
+        const interestRate = document.getElementById('interestRate').value;
+
+        const myCompany = document.getElementById('myCompany').value;
+        const myOrgNum = document.getElementById('myOrgNum').value;
+        const myAddress = document.getElementById('myAddress').value;
+        const myVatNum = document.getElementById('myVatNum').value;
+        const myPhone = document.getElementById('myPhone').value;
+        const myEmail = document.getElementById('myEmail').value;
+
+        const clientName = document.getElementById('clientName').value;
+        const clientAddress = document.getElementById('clientAddress').value;
+
+        const itemDesc = document.getElementById('itemDesc').value;
+        const itemPrice = parseFloat(document.getElementById('itemPrice').value) || 0;
+        const vatPercent = parseFloat(document.getElementById('vatRate').value);
+
+        const momsBelopp = itemPrice * vatPercent;
+        const totalBelopp = itemPrice + momsBelopp;
+        const vatDisplayString = (vatPercent * 100) + "%";
+
+        // --- Skapa PDF-dokument ---
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(20);
+        doc.setTextColor(27, 54, 93);
+        doc.text(myCompany, 15, 25);
+
+        doc.setFontSize(16);
+        doc.text("FAKTURA", 195, 25, { align: "right" });
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(75, 85, 99);
+        doc.text(`Fakturanr: ${invoiceNum}`, 195, 33, { align: "right" });
+        doc.text(`Fakturadatum: ${invoiceDate}`, 195, 38, { align: "right" });
+        doc.text(myAddress, 15, 33);
+
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(107, 114, 128);
+        doc.text("FAKTURAMOTTAGARE", 15, 58);
+        doc.text("BETALNINGSVILLKOR", 195, 58, { align: "right" });
+
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(0, 0, 0);
+        let currentY = 65;
+        doc.text(clientName, 15, currentY);
+
+        doc.setFont("helvetica", "normal");
+        currentY += 5;
+        doc.text(clientAddress, 15, currentY);
+
+        let termsY = 65;
+        doc.text(`Vår referens: ${ourRef}`, 195, termsY, { align: "right" });
+        doc.text(`Villkor: ${paymentTerms}`, 195, termsY + 5, { align: "right" });
+        doc.text(`Förfallodatum: ${dueDate}`, 195, termsY + 10, { align: "right" });
+        doc.text(`Dröjsmålsränta: ${interestRate}`, 195, termsY + 15, { align: "right" });
+
+        doc.autoTable({
+            startY: 95,
+            head: [['Benämning', 'Antal', 'Enhet', 'À-pris', 'Summa']],
+            body: [[itemDesc, '1', 'st', itemPrice.toFixed(2) + ' kr', itemPrice.toFixed(2) + ' kr']],
+            headStyles: { fillColor: [27, 54, 93], fontStyle: 'bold' },
+            styles: { font: 'helvetica', fontSize: 10 },
+            columnStyles: { 3: { halign: 'right' }, 4: { halign: 'right' } }
+        });
+
+        let finalY = doc.lastAutoTable.finalY + 10;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.text(`Exkl. moms:`, 130, finalY);
+        doc.text(`${itemPrice.toFixed(2)} kr`, 195, finalY, { align: "right" });
+
+        doc.text(`Moms (${vatDisplayString}):`, 130, finalY + 6);
+        doc.text(`${momsBelopp.toFixed(2)} kr`, 195, finalY + 6, { align: "right" });
+
+        doc.setFillColor(27, 54, 93);
+        doc.rect(125, finalY + 12, 70, 10, 'F');
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(255, 255, 255);
+        doc.text("ATT BETALA:", 130, finalY + 18.5);
+        doc.text(`${totalBelopp.toFixed(2)} kr`, 192, finalY + 18.5, { align: "right" });
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(75, 85, 99);
+        doc.setLineWidth(0.5);
+        doc.setDrawColor(210, 215, 223);
+        doc.line(15, 272, 195, 272);
+
+        doc.setFont("helvetica", "bold");
+        doc.text("FÖRETAGSINFORMATION", 15, 278);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Namn: ${myCompany}\nOrg.nr: ${myOrgNum}\nMomsreg.nr: ${myVatNum}`, 15, 283);
+
+        doc.setFont("helvetica", "bold");
+        doc.text("KONTAKTUPPGIFTER", 100, 278);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Telefon: ${myPhone}\nE-post: ${myEmail}`, 100, 283);
+
+        doc.setFont("helvetica", "bold");
+        doc.text("Godkänd för F-skatt", 195, 278, { align: "right" });
+
+        doc.save(`Faktura_${invoiceNum}.pdf`);
+    }
+</script>
+
+</body>
+</html>
